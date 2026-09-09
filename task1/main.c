@@ -1,7 +1,9 @@
-#include "compare.h"
 #include <stdio.h>
 #include <stdlib.h>
+
+#include "compare.h"
 #include "factorial.h"
+#include "mario.h"
 
 // correctness design style
 
@@ -9,6 +11,7 @@ void show_menu(void);
 
 int main()
 {
+
     int running = 1;
     while (running)
     {
@@ -56,6 +59,11 @@ int main()
         }
         case '3':
         {
+            play_mario_game();
+            break;
+        }
+        case '4':
+        {
             printf("Exiting the program.\n");
             running = 0;
 
@@ -75,5 +83,6 @@ void show_menu(void)
 {
     printf("1. Calculate Factorial\n");
     printf("2. Compare Two Numbers\n");
-    printf("3. Exit\n");
+    printf("3. Play Mario Game\n");
+    printf("4. Exit\n");
 }
