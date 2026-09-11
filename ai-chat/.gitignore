@@ -1,0 +1,6 @@
+node_modules/
+.env
+
+# CLIO (managed automatically)
+.clio/*
+!.clio/instructions.md

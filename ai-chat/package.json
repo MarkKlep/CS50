@@ -1,0 +1,16 @@
+{
+  "name": "openai-subagent-primitive",
+  "version": "1.0.0",
+  "private": true,
+  "type": "commonjs",
+  "description": "Primitive subagent example using the OpenAI Agents SDK",
+  "scripts": {
+    "subagent": "node subagent.mjs"
+  },
+  "dependencies": {
+    "@openai/agents": "^0.17.2",
+    "express": "^5.2.1",
+    "openai": "^7.14.0",
+    "zod": "^4.0.0"
+  }
+}

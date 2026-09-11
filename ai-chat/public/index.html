@@ -1,0 +1,70 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>chat</title>
+  <style>
+    body { font-family: sans-serif; max-width: 600px; margin: 40px auto; }
+    #log { border: 1px solid #ccc; padding: 10px; height: 400px; overflow-y: auto; margin-bottom: 10px; }
+    .msg { margin: 6px 0; }
+    .user { color: #06c; }
+    .bot { color: #333; }
+    .sys { color: #999; font-style: italic; }
+    #row { display: flex; gap: 6px; }
+    #input { flex: 1; padding: 8px; }
+  </style>
+</head>
+<body>
+  <h3>chat</h3>
+  <div id="log"></div>
+  <div id="row">
+    <input id="input" autofocus placeholder="type a message, or 'exit' to quit" />
+    <button id="send">send</button>
+  </div>
+
+  <script>
+    let history = [];
+    const log = document.getElementById('log');
+    const input = document.getElementById('input');
+
+    function addLine(text, cls) {
+      const div = document.createElement('div');
+      div.className = 'msg ' + cls;
+      div.textContent = text;
+      log.appendChild(div);
+      log.scrollTop = log.scrollHeight;
+    }
+
+    async function send() {
+      const message = input.value.trim();
+      if (!message) return;
+      input.value = '';
+      addLine('you: ' + message, 'user');
+
+      const res = await fetch('/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message, history }),
+      });
+      const data = await res.json();
+
+      if (data.blocked) {
+        addLine('[blocked by guardrail: ' + data.blocked + ']', 'sys');
+        return; // history unchanged, matches server behavior
+      }
+
+      history = data.history;
+      addLine(data.answeredBy + ': ' + data.reply, 'bot');
+
+      if (data.ended) {
+        addLine('[chat ended]', 'sys');
+        input.disabled = true;
+        document.getElementById('send').disabled = true;
+      }
+    }
+
+    document.getElementById('send').addEventListener('click', send);
+    input.addEventListener('keydown', (e) => { if (e.key === 'Enter') send(); });
+  </script>
+</body>
+</html>
