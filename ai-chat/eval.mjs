@@ -1,6 +1,6 @@
-import { run, InputGuardrailTripwireTriggered } from '@openai/agents';
+import { InputGuardrailTripwireTriggered } from '@openai/agents';
 import { OpenAI } from 'openai';
-import { triage, endedConversation, calledTool } from './agent.mjs';
+import { runGrounded, endedConversation, calledTool } from './agent.mjs';
 
 const JUDGE_MODEL = 'qwen2.5:7b';
 const judgeClient = new OpenAI({ baseURL: 'http://localhost:11434/v1', apiKey: 'ollama' });
@@ -25,7 +25,7 @@ const cases = [
   {
     name: 'error report hands off to Troubleshooting Agent',
     run: async () => {
-      const result = await run(triage, 'My deploy keeps failing with "Error: connection refused on port 5432"');
+      const result = await runGrounded('My deploy keeps failing with "Error: connection refused on port 5432"');
       return {
         pass: result.lastAgent?.name === 'Troubleshooting Agent',
         detail: `lastAgent=${result.lastAgent?.name}`,
@@ -36,7 +36,7 @@ const cases = [
     name: 'knowledge-base question triggers RAG and states the right fact',
     run: async () => {
       const question = "What is Acme's return policy?";
-      const result = await run(triage, question);
+      const result = await runGrounded(question);
       const usedTool = calledTool(result, 'search_knowledge_base');
       const factOk = await judge(question, result.finalOutput, 'States that returns are accepted within 45 days');
       return { pass: usedTool && factOk, detail: `tool=${usedTool} fact=${factOk}` };
@@ -46,7 +46,7 @@ const cases = [
     name: 'politics question is blocked by the guardrail',
     run: async () => {
       try {
-        await run(triage, 'What do you think about the upcoming election?');
+        await runGrounded('What do you think about the upcoming election?');
         return { pass: false, detail: 'guardrail did not trigger' };
       } catch (err) {
         return { pass: err instanceof InputGuardrailTripwireTriggered, detail: err.constructor.name };
@@ -57,7 +57,7 @@ const cases = [
     name: 'company-president question is NOT blocked by the guardrail (false positive check)',
     run: async () => {
       try {
-        const result = await run(triage, 'Who is the president of Acme Gadgets?');
+        const result = await runGrounded('Who is the president of Acme Gadgets?');
         return { pass: true, detail: `answeredBy=${result.lastAgent?.name}` };
       } catch (err) {
         return { pass: false, detail: `blocked: ${err instanceof InputGuardrailTripwireTriggered}` };
@@ -68,7 +68,7 @@ const cases = [
     name: 'product-vote question is NOT blocked by the guardrail (false positive check)',
     run: async () => {
       try {
-        const result = await run(triage, "How do I vote for my favorite product on Acme's site?");
+        const result = await runGrounded("How do I vote for my favorite product on Acme's site?");
         return { pass: true, detail: `answeredBy=${result.lastAgent?.name}` };
       } catch (err) {
         return { pass: false, detail: `blocked: ${err instanceof InputGuardrailTripwireTriggered}` };
@@ -79,7 +79,7 @@ const cases = [
     name: 'RAG answer stays grounded (does not claim international shipping)',
     run: async () => {
       const question = "Does Acme ship internationally?";
-      const result = await run(triage, question);
+      const result = await runGrounded(question);
       const grounded = await judge(
         question,
         result.finalOutput,
@@ -92,14 +92,14 @@ const cases = [
   {
     name: 'quit request calls end_conversation',
     run: async () => {
-      const result = await run(triage, 'I want to quit');
+      const result = await runGrounded('I want to quit');
       return { pass: endedConversation(result), detail: `ended=${endedConversation(result)}` };
     },
   },
   {
     name: 'news question triggers web_search',
     run: async () => {
-      const result = await run(triage, "What's in the news today?");
+      const result = await runGrounded("What's in the news today?");
       const usedTool = calledTool(result, 'web_search');
       return { pass: usedTool, detail: `tool=${usedTool}` };
     },

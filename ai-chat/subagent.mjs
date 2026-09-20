@@ -1,6 +1,5 @@
 import readline from 'node:readline';
-import { triage, endedConversation, InputGuardrailTripwireTriggered } from './agent.mjs';
-import { run } from '@openai/agents';
+import { runGrounded, endedConversation, InputGuardrailTripwireTriggered } from './agent.mjs';
 
 runChat();
 
@@ -20,7 +19,7 @@ async function runChat() {
     history.push({ role: 'user', content: prompt });
 
     try {
-      const result = await run(triage, history);
+      const result = await runGrounded(history);
       console.log('answered by:', result.lastAgent?.name);
       console.log(result.finalOutput);
 

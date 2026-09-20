@@ -1,6 +1,5 @@
 import express from 'express';
-import { triage, endedConversation, InputGuardrailTripwireTriggered } from './agent.mjs';
-import { run } from '@openai/agents';
+import { runGrounded, endedConversation, InputGuardrailTripwireTriggered } from './agent.mjs';
 
 const app = express();
 app.use(express.json());
@@ -15,7 +14,7 @@ app.post('/chat', async (req, res) => {
   const input = [...history, { role: 'user', content: message }];
 
   try {
-    const result = await run(triage, input);
+    const result = await runGrounded(input);
     res.json({
       reply: result.finalOutput,
       answeredBy: result.lastAgent?.name,

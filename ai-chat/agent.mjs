@@ -1,6 +1,7 @@
 import { OpenAI } from 'openai';
 import {
   Agent,
+  run,
   tool,
   OpenAIChatCompletionsModel,
   setDefaultOpenAIClient,
@@ -106,7 +107,10 @@ export const triage = new Agent({
     If the user asks something that could be answered from the project's own
     reference documents (specific facts, definitions, or details you are not
     confident about from general knowledge), call the search_knowledge_base
-    tool first and answer using its results. Mention the source file.
+    tool first and answer using its results. Mention the source file. Only
+    state facts that are explicitly present in the retrieved results - if the
+    results don't cover part of the question, say that part isn't covered
+    instead of guessing or inferring.
 
     If the user asks for current/live/real-time information (prices, news, scores, dates),
     you must call the web_search tool first and base your answer on its results.
@@ -130,4 +134,42 @@ export function calledTool(result, name) {
 
 export function endedConversation(result) {
   return calledTool(result, 'end_conversation');
+}
+
+async function isFaithful(context, answer) {
+  const res = await client.chat.completions.create({
+    model: MODEL,
+    temperature: 0,
+    messages: [
+      {
+        role: 'user',
+        content: `Context:\n${context}\n\nAnswer: ${answer}\n\nIs every claim in the answer explicitly supported by the context above? Reply with exactly one word: YES or NO.`,
+      },
+    ],
+  });
+  return res.choices[0].message.content.trim().toUpperCase().startsWith('YES');
+}
+
+// Runs triage and, if it used the knowledge base, verifies the answer is
+// actually supported by what was retrieved before returning it - a prompt
+// instruction alone isn't reliable enough to stop the model from guessing
+// past what the retrieved docs say.
+export async function runGrounded(input) {
+  const result = await run(triage, input);
+  let finalOutput = result.finalOutput;
+
+  if (calledTool(result, 'search_knowledge_base')) {
+    const context = result.newItems
+      .filter((item) => item.rawItem?.type === 'function_call_result' && item.rawItem.name === 'search_knowledge_base')
+      .map((item) => item.rawItem.output?.text)
+      .join('\n\n');
+    if (context && !(await isFaithful(context, finalOutput))) {
+      finalOutput =
+        "I found related information, but can't confidently confirm that from the available documents - they don't fully cover this.";
+    }
+  }
+
+  // finalOutput is a getter-only property on RunResultBase, so return a
+  // plain object with the fields callers actually use instead of mutating it.
+  return { finalOutput, lastAgent: result.lastAgent, history: result.history, newItems: result.newItems };
 }
