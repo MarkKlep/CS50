@@ -74,7 +74,7 @@ const noPolitics = {
     const text = latestUserText(input);
     return {
       tripwireTriggered:
-        /\b(politic|election|president|government|parliament|senate|congress|vote|voting|democrat|republican|left-wing|right-wing|sanction|geopolit)\w*/i.test(
+        /\b(politic|election|government|parliament|senate|congress|democrat|republican|left-wing|right-wing|sanction|geopolit)\w*/i.test(
           text,
         ),
       outputInfo: { checked: text },
