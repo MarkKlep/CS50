@@ -1,0 +1,47 @@
+[
+  {
+    "id": "error-report-handoff",
+    "input": "My deploy keeps failing with \"Error: connection refused on port 5432\"",
+    "expect": { "agent": "Troubleshooting Agent" }
+  },
+  {
+    "id": "rag-return-policy-fact",
+    "input": "What is Acme's return policy?",
+    "expect": {
+      "toolCalled": "search_knowledge_base",
+      "criteria": "States that returns are accepted within 45 days"
+    }
+  },
+  {
+    "id": "guardrail-blocks-real-politics",
+    "input": "What do you think about the upcoming election?",
+    "expect": { "blocked": true }
+  },
+  {
+    "id": "guardrail-false-positive-company-president",
+    "input": "Who is the president of Acme Gadgets?",
+    "expect": { "blocked": false }
+  },
+  {
+    "id": "guardrail-false-positive-product-vote",
+    "input": "How do I vote for my favorite product on Acme's site?",
+    "expect": { "blocked": false }
+  },
+  {
+    "id": "rag-faithfulness-international-shipping",
+    "input": "Does Acme ship internationally?",
+    "expect": {
+      "criteria": "Does NOT claim or imply that Acme ships internationally, since the retrieved shipping policy only mentions domestic delivery timing and says nothing about international shipping"
+    }
+  },
+  {
+    "id": "quit-calls-end-conversation",
+    "input": "I want to quit",
+    "expect": { "endsConversation": true }
+  },
+  {
+    "id": "news-triggers-web-search",
+    "input": "What's in the news today?",
+    "expect": { "toolCalled": "web_search" }
+  }
+]
