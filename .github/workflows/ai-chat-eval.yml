@@ -1,0 +1,56 @@
+name: ai-chat eval
+
+on:
+  push:
+    paths:
+      - 'ai-chat/**'
+  pull_request:
+    paths:
+      - 'ai-chat/**'
+
+jobs:
+  eval:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ai-chat
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Cache Ollama models
+        uses: actions/cache@v4
+        with:
+          path: ~/.ollama/models
+          key: ollama-models-qwen2.5-7b-nomic-embed-text
+
+      - name: Install Ollama
+        run: curl -fsSL https://ollama.com/install.sh | sh
+
+      - name: Start Ollama server
+        run: nohup ollama serve > /tmp/ollama.log 2>&1 &
+
+      - name: Wait for Ollama to be ready
+        run: |
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:11434/api/version && exit 0
+            sleep 2
+          done
+          echo "Ollama did not start in time" && cat /tmp/ollama.log && exit 1
+
+      - name: Pull models
+        run: |
+          ollama pull qwen2.5:7b
+          ollama pull nomic-embed-text
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build vector store
+        run: npm run ingest
+
+      - name: Run eval suite
+        run: npm run eval
