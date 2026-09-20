@@ -16,8 +16,9 @@ in `agent.mjs`:
 
 The `triage` agent is the main entry point for every conversation. It can:
 
-- Hand off math questions to a dedicated `Math Tutor` agent, which only does
-  arithmetic and shows its steps.
+- Hand off error reports and bug descriptions to a dedicated `Troubleshooting
+  Agent`, which lists likely causes ranked by probability and concrete next
+  steps to confirm or fix each one.
 - Call a `web_search` tool to look up current or live information.
 - Call an `end_conversation` tool when the user wants to quit the chat.
 - Call a `search_knowledge_base` tool to retrieve relevant passages from the

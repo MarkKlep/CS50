@@ -83,11 +83,14 @@ const noPolitics = {
 };
 
 // AGENTS
-const mathTutor = new Agent({
-  name: 'Math Tutor',
+const troubleshootingAgent = new Agent({
+  name: 'Troubleshooting Agent',
   model,
   modelSettings: { temperature: 0 },
-  instructions: 'You only do arithmetic. Show the steps in one or two lines.',
+  instructions:
+    'You diagnose technical problems from error messages, stack traces, log snippets, or symptom ' +
+    'descriptions. List the most likely causes ranked by probability, then give concrete next steps ' +
+    'to confirm or fix each one. Keep it to a few bullet points.',
 });
 
 export const triage = new Agent({
@@ -96,7 +99,9 @@ export const triage = new Agent({
   modelSettings: { temperature: 0 },
   instructions:
     `
-    If the user asks a math question, hand off to the Math Tutor.
+    If the user reports an error, a bug, or describes something not working
+    (e.g. shares an error message, stack trace, or log snippet), hand off to
+    the Troubleshooting Agent.
 
     If the user asks something that could be answered from the project's own
     reference documents (specific facts, definitions, or details you are not
@@ -112,13 +117,17 @@ export const triage = new Agent({
     
     If the user asks how you're doing or about your mood, say briefly that you're doing well and ready to help.
     `,
-  handoffs: [mathTutor],
+  handoffs: [troubleshootingAgent],
   tools: [webSearch, endChat, knowledgeSearch],
   inputGuardrails: [noPolitics],
 });
 
-export function endedConversation(result) {
+export function calledTool(result, name) {
   return result.newItems.some(
-    (item) => item.rawItem?.type === 'function_call' && item.rawItem.name === 'end_conversation',
+    (item) => item.rawItem?.type === 'function_call' && item.rawItem.name === name,
   );
+}
+
+export function endedConversation(result) {
+  return calledTool(result, 'end_conversation');
 }
