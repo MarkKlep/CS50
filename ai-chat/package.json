@@ -5,7 +5,9 @@
   "type": "commonjs",
   "description": "Primitive subagent example using the OpenAI Agents SDK",
   "scripts": {
-    "subagent": "node subagent.mjs"
+    "subagent": "node subagent.mjs",
+    "start": "node server.mjs",
+    "ingest": "node ingest.mjs"
   },
   "dependencies": {
     "@openai/agents": "^0.17.2",

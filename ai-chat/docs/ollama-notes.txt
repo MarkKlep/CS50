@@ -1,0 +1,19 @@
+Ollama Notes
+
+Ollama runs large language models locally on your own machine instead of
+calling a cloud API. It exposes an OpenAI-compatible endpoint at
+http://localhost:11434/v1, which means existing OpenAI SDK clients can talk
+to it by just changing the base URL and using a placeholder API key.
+
+Models must be downloaded before they can be used, with a command like:
+ollama pull <model-name>
+
+Ollama supports both chat/completion models (like qwen2.5) and dedicated
+embedding models (like nomic-embed-text). Embedding models turn text into a
+vector of numbers that captures its meaning, which is what makes semantic
+search and retrieval-augmented generation possible without sending any data
+to an external service.
+
+The Ollama server must be running in the background (for example via
+`ollama serve` or the Ollama desktop app) before any requests to
+http://localhost:11434 will succeed.

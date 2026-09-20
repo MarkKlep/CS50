@@ -7,6 +7,8 @@ import {
   setTracingDisabled,
 } from '@openai/agents';
 import { z } from 'zod';
+import { embed } from './embeddings.mjs';
+import { search } from './vectorStore.mjs';
 
 export { InputGuardrailTripwireTriggered } from '@openai/agents';
 
@@ -39,6 +41,23 @@ const webSearch = tool({
       .slice(0, 5)
       .map((m) => m[1]);
     return titles.length ? titles.join('\n') : 'No results found.';
+  },
+});
+
+const knowledgeSearch = tool({
+  name: 'search_knowledge_base',
+  description:
+    "Search the project's local reference documents (docs/) for information relevant to the user's question. Use this before answering questions about specific facts, policies, or details that might be covered there rather than in your general knowledge.",
+  parameters: z.object({ query: z.string() }),
+  execute: async ({ query }) => {
+    try {
+      const queryEmbedding = await embed(query);
+      const results = await search(queryEmbedding, 4);
+      if (!results.length) return 'No relevant information found in the knowledge base.';
+      return results.map((r, i) => `[${i + 1}] (source: ${r.source})\n${r.text}`).join('\n\n');
+    } catch (err) {
+      return `Knowledge base unavailable: ${err.message}`;
+    }
   },
 });
 
@@ -79,6 +98,11 @@ export const triage = new Agent({
     `
     If the user asks a math question, hand off to the Math Tutor.
 
+    If the user asks something that could be answered from the project's own
+    reference documents (specific facts, definitions, or details you are not
+    confident about from general knowledge), call the search_knowledge_base
+    tool first and answer using its results. Mention the source file.
+
     If the user asks for current/live/real-time information (prices, news, scores, dates),
     you must call the web_search tool first and base your answer on its results.
 
@@ -89,7 +113,7 @@ export const triage = new Agent({
     If the user asks how you're doing or about your mood, say briefly that you're doing well and ready to help.
     `,
   handoffs: [mathTutor],
-  tools: [webSearch, endChat],
+  tools: [webSearch, endChat, knowledgeSearch],
   inputGuardrails: [noPolitics],
 });
 
